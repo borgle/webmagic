@@ -410,7 +410,6 @@ public class Spider implements Runnable, Task {
     }
 
     private void onDownloadSuccess(Request request, Page page) {
-        onSuccess(request);
         if (site.getAcceptStatCode().contains(page.getStatusCode())){
             pageProcessor.process(page);
             extractAndAddRequests(page, spawnUrl);
@@ -419,6 +418,8 @@ public class Spider implements Runnable, Task {
                     pipeline.process(page.getResultItems(), this);
                 }
             }
+        } else {
+            logger.info("page status code error, page {} , code: {}", request.getUrl(), page.getStatusCode());
         }
         sleep(site.getSleepTime());
         return;
@@ -431,7 +432,6 @@ public class Spider implements Runnable, Task {
             // for cycle retry
             doCycleRetry(request);
         }
-        onError(request);
     }
 
     private void doCycleRetry(Request request) {
