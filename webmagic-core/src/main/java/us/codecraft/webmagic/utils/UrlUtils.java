@@ -43,7 +43,7 @@ public class UrlUtils {
             if (url.startsWith("?"))
                 url = base.getPath() + url;
             URL abs = new URL(base, url);
-            return encodeIllegalCharacterInUrl(abs.toExternalForm());
+            return abs.toExternalForm();
         } catch (MalformedURLException e) {
             return "";
         }
@@ -53,10 +53,15 @@ public class UrlUtils {
      *
      * @param url url
      * @return new url
+     * @deprecated
      */
     public static String encodeIllegalCharacterInUrl(String url) {
-        //TODO more charator support
         return url.replace(" ", "%20");
+    }
+
+    public static String fixIllegalCharacterInUrl(String url) {
+        //TODO more charator support
+        return url.replace(" ", "%20").replaceAll("#+", "#");
     }
 
     public static String getHost(String url) {
@@ -108,7 +113,7 @@ public class UrlUtils {
         return urlList;
     }
 
-    private static final Pattern patternForCharset = Pattern.compile("charset\\s*=\\s*['\"]*([^\\s;'\"]*)");
+    private static final Pattern patternForCharset = Pattern.compile("charset\\s*=\\s*['\"]*([^\\s;'\"]*)", Pattern.CASE_INSENSITIVE);
 
     public static String getCharset(String contentType) {
         Matcher matcher = patternForCharset.matcher(contentType);

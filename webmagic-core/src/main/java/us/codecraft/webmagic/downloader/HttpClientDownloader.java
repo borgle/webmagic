@@ -83,7 +83,7 @@ public class HttpClientDownloader extends AbstractDownloader {
         Page page = Page.fail();
         try {
             httpResponse = httpClient.execute(requestContext.getHttpUriRequest(), requestContext.getHttpClientContext());
-            page = handleResponse(request, task.getSite().getCharset(), httpResponse, task);
+            page = handleResponse(request, request.getCharset() != null ? request.getCharset() : task.getSite().getCharset(), httpResponse, task);
             onSuccess(request);
             logger.info("downloading page success {}", request.getUrl());
             return page;
@@ -108,9 +108,17 @@ public class HttpClientDownloader extends AbstractDownloader {
     }
 
     protected Page handleResponse(Request request, String charset, HttpResponse httpResponse, Task task) throws IOException {
-        String content = getResponseContent(charset, httpResponse);
+        byte[] bytes = IOUtils.toByteArray(httpResponse.getEntity().getContent());
+        String contentType = httpResponse.getEntity().getContentType() == null ? "" : httpResponse.getEntity().getContentType().getValue();
         Page page = new Page();
-        page.setRawText(content);
+        page.setBytes(bytes);
+        if (!request.isBinaryContent()){
+            if (charset == null) {
+                charset = getHtmlCharset(contentType, bytes);
+            }
+            page.setCharset(charset);
+            page.setRawText(new String(bytes, charset));
+        }
         page.setUrl(new PlainText(request.getUrl()));
         page.setRequest(request);
         page.setStatusCode(httpResponse.getStatusLine().getStatusCode());
@@ -121,22 +129,12 @@ public class HttpClientDownloader extends AbstractDownloader {
         return page;
     }
 
-    private String getResponseContent(String charset, HttpResponse httpResponse) throws IOException {
+    private String getHtmlCharset(String contentType, byte[] contentBytes) throws IOException {
+        String charset = CharsetUtils.detectCharset(contentType, contentBytes);
         if (charset == null) {
-            byte[] contentBytes = IOUtils.toByteArray(httpResponse.getEntity().getContent());
-            String htmlCharset = getHtmlCharset(httpResponse, contentBytes);
-            if (htmlCharset != null) {
-                return new String(contentBytes, htmlCharset);
-            } else {
-                logger.warn("Charset autodetect failed, use {} as charset. Please specify charset in Site.setCharset()", Charset.defaultCharset());
-                return new String(contentBytes);
-            }
-        } else {
-            return IOUtils.toString(httpResponse.getEntity().getContent(), charset);
+            charset = Charset.defaultCharset().name();
+            logger.warn("Charset autodetect failed, use {} as charset. Please specify charset in Site.setCharset()", Charset.defaultCharset());
         }
-    }
-
-    private String getHtmlCharset(HttpResponse httpResponse, byte[] contentBytes) throws IOException {
-        return CharsetUtils.detectCharset(httpResponse.getEntity().getContentType() == null ? "" : httpResponse.getEntity().getContentType().getValue(), contentBytes);
+        return charset;
     }
 }

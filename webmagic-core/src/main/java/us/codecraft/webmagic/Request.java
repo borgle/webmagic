@@ -45,6 +45,14 @@ public class Request implements Serializable {
      */
     private long priority;
 
+    /**
+     * When it is set to TRUE, the downloader will not try to parse response body to text.
+     *
+     */
+    private boolean binaryContent = false;
+
+    private String charset;
+
     public Request() {
     }
 
@@ -160,6 +168,24 @@ public class Request implements Serializable {
 
     public void setRequestBody(HttpRequestBody requestBody) {
         this.requestBody = requestBody;
+    }
+
+    public boolean isBinaryContent() {
+        return binaryContent;
+    }
+
+    public Request setBinaryContent(boolean binaryContent) {
+        this.binaryContent = binaryContent;
+        return this;
+    }
+
+    public String getCharset() {
+        return charset;
+    }
+
+    public Request setCharset(String charset) {
+        this.charset = charset;
+        return this;
     }
 
     @Override
